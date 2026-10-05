@@ -1,4 +1,6 @@
 # Enterprise Knowledge-Graph RAG
+**🔗 Live demo:** [enterprise-kg-rag-eight.vercel.app](https://enterprise-kg-rag-eight.vercel.app)
+*(Backend runs on Render's free tier and sleeps after inactivity, so the first request may take 30-60 seconds to wake it up.)*
 
 A hybrid retrieval system that answers questions over messy corporate
 documents (reports, memos, PDFs) using **both** vector similarity search
