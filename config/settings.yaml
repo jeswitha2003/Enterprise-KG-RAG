@@ -1,0 +1,72 @@
+# config/settings.yaml
+#
+# Central configuration for models, routing keywords, and graph backend choice.
+# Every knob an interviewer might ask "why did you pick X" about lives here,
+# in one place, with a comment explaining the choice.
+
+llm:
+  provider: "gemini"        # "gemini" | "none" (none = offline heuristics only, no LLM calls anywhere)
+  model_name: "gemini-3.1-flash-lite"
+  embed_model_name: "text-embedding-004"
+  temperature: 0.0
+
+vector_store:
+  # Chroma is embedded (no server to run) and swaps to a persistent path in
+  # one line if you want the index to survive restarts.
+  persist_directory: null   # e.g. "./chroma_db" to persist; null = in-memory (ephemeral)
+  top_k: 3
+
+graph_store:
+  # If NEO4J_URI (and NEO4J_USERNAME / NEO4J_PASSWORD) are set in the
+  # environment, the real Neo4j driver is used. Otherwise this whole
+  # project runs on an in-memory NetworkX graph with the identical
+  # add_triple / neighbors / find_path interface — same resilience
+  # pattern as the LLM and vector-embedding fallbacks below.
+  neo4j_uri_env: "NEO4J_URI"
+  neo4j_user_env: "NEO4J_USERNAME"
+  neo4j_password_env: "NEO4J_PASSWORD"
+
+router:
+  # Keyword heuristic used when no LLM key is configured (or the LLM call
+  # fails) to decide which retrieval path a question needs. Deliberately
+  # short ROOT substrings (not exact phrases) so "reports to" / "report to"
+  # / "reporting to" all match on "report" — a real regex/NLP parser would
+  # do proper stemming, but a substring root gets 90% of the value for a
+  # fraction of the complexity, and stays fully deterministic and testable.
+  graph_keywords:
+    - "relationship"
+    - "related to"
+    - "connect"
+    - "report"       # reports to / reporting to / report to
+    - "who work"
+    - "path from"
+    - "network of"
+    - "connection"
+    - "link"
+    - "impact"
+    - "affect"        # affects / affected / affecting
+    - "between"
+  vector_keywords:
+    - "what is"
+    - "what was"
+    - "how much"
+    - "summar"        # summarize / summary
+    - "revenue"
+    - "grew"
+    - "when did"
+    - "where"
+
+entity_extraction:
+  # Regex-based relation patterns used by the offline heuristic extractor.
+  # Each is (pattern, relation_label). Case-insensitive, applied per sentence.
+  relation_patterns:
+    - ["reports? to", "REPORTS_TO"]
+    - ["reporting to", "REPORTS_TO"]
+    - ["promoted to", "PROMOTED_TO"]
+    - ["appointed", "APPOINTED_AS"]
+    - ["signed", "SIGNED_DEAL_WITH"]
+    - ["acquired", "ACQUIRED"]
+    - ["partnered with", "PARTNERED_WITH"]
+    - ["hired", "HIRED"]
+    - ["affected", "AFFECTS"]
+    - ["flagged", "FLAGGED_BY"]
